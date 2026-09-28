@@ -26,7 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * REST API Endpoint Servlet for C_Invoice Reporting (with HTTP Basic Auth Security).
+ * REST API Endpoint Servlet for C_Invoice Reporting (with QtyInvoiced added).
  * 
  * Authentication:
  * - Basic Auth Header (Authorization: Basic <base64(username:password)>) -> WAJIB
@@ -337,11 +337,12 @@ public class InvoiceApiServlet extends HttpServlet {
 	}
 
 	/**
-	 * Helper untuk mengambil list baris/line C_InvoiceLine (Ordered Layout).
+	 * Helper untuk mengambil list baris/line C_InvoiceLine (termasuk QtyInvoiced).
 	 */
 	private JSONArray getInvoiceLineDetails(int cInvoiceId, String headerDescription) throws Exception {
 		JSONArray lines = new JSONArray();
 		String sql = "SELECT invl.c_invoiceline_id, "
+				+ "COALESCE(invl.qtyinvoiced, 0) AS qtyinvoiced, "
 				+ "COALESCE(invl.linenetamt, 0) AS linenetamt, "
 				+ "ROW_NUMBER() OVER(PARTITION BY invl.c_invoice_id ORDER BY invl.line) AS lineno, "
 				+ "chr.name AS coa, "
@@ -363,6 +364,7 @@ public class InvoiceApiServlet extends HttpServlet {
 			while (rs.next()) {
 				OrderedJSONObject lineObj = new OrderedJSONObject();
 				lineObj.put("c_invoiceline_id", rs.getInt("c_invoiceline_id"));
+				lineObj.put("qtyinvoiced", rs.getBigDecimal("qtyinvoiced"));
 				lineObj.put("linenetamt", rs.getBigDecimal("linenetamt"));
 				lineObj.put("lineno", rs.getInt("lineno"));
 				lineObj.put("coa", rs.getString("coa"));
